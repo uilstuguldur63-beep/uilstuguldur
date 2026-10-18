@@ -1,0 +1,6 @@
+{
+  "name": "Миний дүү бас ээж",
+  "description": "Хүүхэд болон ээжид зориулсан англи хэл, математик, монгол бичгийн сургалтын хөгжилтэй интерактив аппликейшн. Суръя, зуръя, бодъё, хамтдаа хөгжицгөөе!",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
