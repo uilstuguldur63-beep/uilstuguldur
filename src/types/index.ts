@@ -29,6 +29,45 @@ export interface MascotOutfit {
   icon: string;
 }
 
+export interface MistakeItem {
+  id: string;
+  gameId: string;
+  gameTitle: string;
+  question: string;
+  userAnswer: string;
+  correctAnswer: string;
+  explanation?: string;
+  timestamp: string;
+}
+
+export interface GameSessionResult {
+  id: string;
+  gameId: string;
+  gameTitle: string;
+  date: string;
+  totalQuestions: number; // 100
+  score: number;
+  correctCount: number;
+  incorrectCount: number;
+  percentage: number;
+  expEarned: number;
+  levelAtStart: number;
+  levelAtEnd: number;
+  mistakes: MistakeItem[];
+}
+
+export interface InProgressGameSession {
+  gameId: string;
+  gameTitle: string;
+  currentIndex: number;
+  score: number;
+  correctCount: number;
+  incorrectCount: number;
+  expEarned: number;
+  mistakes: MistakeItem[];
+  savedAt: string;
+}
+
 export interface UserProfile {
   id: ProfileType;
   displayName: string;
@@ -36,6 +75,7 @@ export interface UserProfile {
   roleDescription: string;
   avatar: string;
   level: number;
+  exp: number; // Current EXP towards next level
   stars: number;
   coins: number;
   completedLessons: string[];
@@ -45,6 +85,9 @@ export interface UserProfile {
   unlockedOutfits: string[];
   equippedHat: string;
   equippedAccessory: string;
+  mistakeReviewList: MistakeItem[];
+  gameHistory: GameSessionResult[];
+  inProgressSessions?: Record<string, InProgressGameSession>;
   stats: {
     englishLessonsDone: number;
     mathLessonsDone: number;
@@ -54,6 +97,7 @@ export interface UserProfile {
     gamesPlayed: number;
     speakingExercisesDone: number;
     quizzesPassed: number;
+    sessionsCompleted100: number;
   };
   learningGoals: {
     dailyTargetMinutes: number;
@@ -61,6 +105,24 @@ export interface UserProfile {
     dailyStreak: number;
     lastActiveDate: string;
   };
+}
+
+export type DifficultyStage = 'Beginner' | 'Easy' | 'Intermediate' | 'Advanced' | 'Expert';
+
+export function getDifficultyStage(level: number): {
+  stage: DifficultyStage;
+  stageMn: string;
+  color: string;
+} {
+  if (level <= 5) return { stage: 'Beginner', stageMn: 'Анхан шат', color: 'text-emerald-500' };
+  if (level <= 10) return { stage: 'Easy', stageMn: 'Энгийн шат', color: 'text-sky-500' };
+  if (level <= 20) return { stage: 'Intermediate', stageMn: 'Дунд шат', color: 'text-indigo-500' };
+  if (level <= 35) return { stage: 'Advanced', stageMn: 'Ахисан шат', color: 'text-purple-500' };
+  return { stage: 'Expert', stageMn: 'Мастер шат', color: 'text-amber-500' };
+}
+
+export function getExpRequiredForLevel(level: number): number {
+  return 100 + (level - 1) * 50;
 }
 
 export type SubjectId = 'english' | 'math' | 'mongolian';
@@ -183,5 +245,6 @@ export interface AppSettings {
   reducedMotion: boolean;
   showSubtitles: boolean;
   showMongolianHints: boolean;
+  showTranslation: boolean; // When true, shows Mongolian translation. When false, shows English.
 }
 

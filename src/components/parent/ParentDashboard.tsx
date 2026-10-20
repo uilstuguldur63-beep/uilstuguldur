@@ -277,21 +277,117 @@ export const ParentDashboard: React.FC<ParentDashboardProps> = ({
                     <span className="text-2xl">🇲🇳</span>
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white">
-                        Монгол бичгийн 20 модуль
+                        Монгол хэл, 35 үсэг & Монгол бичиг
                       </div>
                       <div className="text-[11px] text-slate-500">
-                        Баталгаат материал оруулахад бэлэн систем
+                        35 үсэг, үндсэн 7 эгшиг, 100 асуулттай сорилууд
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-xs font-bold text-amber-600">
-                      Бэлтгэгдсэн
+                      {currentProf.stats.mongolianLessonsDone} хичээл
                     </div>
-                    <div className="text-[10px] text-slate-400">Материал хүлээж буй</div>
+                    <div className="text-[10px] text-emerald-600">Цагаан толгой идэвхтэй</div>
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* 100-Question Game Sessions History */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>🎮</span>
+                  <span>100 Асуулттай сорилуудын түүх ({currentProf.gameHistory?.length || 0})</span>
+                </h3>
+              </div>
+
+              {!currentProf.gameHistory || currentProf.gameHistory.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 text-center text-xs text-slate-400">
+                  Одоогоор 100 асуулттай бүтэн тоглоом дуусгаагүй байна. Тоглоомоо дуусгахад дүн энд хадгалагдана.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {currentProf.gameHistory.map((sess) => (
+                    <div
+                      key={sess.id}
+                      className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <div className="font-bold text-slate-900 dark:text-white">
+                          {sess.gameTitle}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {new Date(sess.date).toLocaleDateString()} · Түвшин {sess.levelAtStart} ➔ {sess.levelAtEnd}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-purple-600">
+                          {sess.correctCount} / 100 ({sess.percentage}%)
+                        </span>
+                        <div className="text-[10px] text-amber-500 font-bold">
+                          +{sess.expEarned} EXP
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Mistakes Review List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>📝</span>
+                  <span>Анхаарах алдааны жагсаалт ({currentProf.mistakeReviewList?.length || 0})</span>
+                </h3>
+                {currentProf.mistakeReviewList && currentProf.mistakeReviewList.length > 0 && (
+                  <button
+                    onClick={() => {
+                      storageService.clearMistakes();
+                      speechService.playSoundEffect('pop');
+                    }}
+                    className="text-[11px] font-semibold text-rose-500 hover:underline"
+                  >
+                    Арилгах
+                  </button>
+                )}
+              </div>
+
+              {!currentProf.mistakeReviewList || currentProf.mistakeReviewList.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 text-center text-xs text-emerald-700 dark:text-emerald-300">
+                  ✓ Одоогоор давтах шаардлагатай алдаа бүртгэгдээгүй байна. Маш сайн!
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {currentProf.mistakeReviewList.map((m) => (
+                    <div
+                      key={m.id}
+                      className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs space-y-1"
+                    >
+                      <div className="font-bold text-slate-800 dark:text-slate-200">
+                        {m.question}
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] flex-wrap">
+                        <span className="text-rose-500 line-through">
+                          Алдаа: {m.userAnswer || 'Хоосон'}
+                        </span>
+                        <span>➔</span>
+                        <span className="text-emerald-600 font-bold">
+                          Зөв хариу: {m.correctAnswer}
+                        </span>
+                      </div>
+                      {m.explanation && (
+                        <p className="text-[10px] text-slate-500 italic">
+                          {m.explanation}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Privacy Compliance Assurance Note */}

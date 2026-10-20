@@ -20,6 +20,8 @@ import { MimiWorld } from './components/rewards/MimiWorld';
 import { ParentDashboard } from './components/parent/ParentDashboard';
 import { SettingsModal } from './components/settings/SettingsModal';
 import { fireCelebrationConfetti } from './components/common/Confetti';
+import { TranslationProvider } from './context/TranslationContext';
+import { FloatingTranslateButton } from './components/common/FloatingTranslateButton';
 
 export default function App() {
   const [allProfiles, setAllProfiles] = useState<Record<ProfileType, UserProfile>>(() =>
@@ -85,13 +87,16 @@ export default function App() {
   };
 
   const handleCompleteLesson = (moduleId: string, subject: 'english' | 'math' | 'mongolian' = 'english') => {
-    const updated = storageService.markLessonComplete(moduleId, subject);
-    handleUpdateProfile(updated);
+    const { updatedProfile } = storageService.markLessonComplete(moduleId, subject);
+    handleUpdateProfile(updatedProfile);
     speechService.playSoundEffect('star');
     fireCelebrationConfetti();
   };
 
-  const handleReward = (stars: number, coins: number) => {
+  const handleReward = (stars: number, coins: number, expBonus: number = 0) => {
+    if (expBonus > 0) {
+      storageService.addExp(expBonus);
+    }
     const updated = storageService.addReward(stars, coins);
     handleUpdateProfile(updated);
   };
@@ -105,9 +110,10 @@ export default function App() {
       : 'text-sm sm:text-base';
 
   return (
-    <div
-      className={`min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors ${fontSizeClass}`}
-    >
+    <TranslationProvider settings={settings} onUpdateSettings={handleUpdateSettings}>
+      <div
+        className={`min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans transition-colors ${fontSizeClass}`}
+      >
       {/* Top Bar Header */}
       <Header
         activeProfile={activeProfile}
@@ -245,6 +251,10 @@ export default function App() {
           onClose={() => setShowSettingsModal(false)}
         />
       )}
+
+      {/* Floating Translate Button (Quick toggle anywhere) */}
+      <FloatingTranslateButton activeProfileType={activeProfileType} />
     </div>
+    </TranslationProvider>
   );
 }

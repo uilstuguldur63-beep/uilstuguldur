@@ -16,6 +16,7 @@ import { mathModules } from '../../data/curriculumData';
 import { LessonModule, UserProfile } from '../../types';
 import { speechService } from '../../services/speechService';
 import { fireCelebrationConfetti } from '../common/Confetti';
+import { useTranslation } from '../../context/TranslationContext';
 
 interface MathHubProps {
   activeProfile: UserProfile;
@@ -30,6 +31,7 @@ export const MathHub: React.FC<MathHubProps> = ({
   onNavigate,
   onCompleteLesson,
 }) => {
+  const { t, isTranslated } = useTranslation();
   const [selectedModule, setSelectedModule] = useState<LessonModule | null>(() => {
     if (initialModuleId) {
       return mathModules.find((m) => m.id === initialModuleId) || null;
@@ -58,11 +60,14 @@ export const MathHub: React.FC<MathHubProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-2xl">➕</span>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Математикийн 20 модуль
+              {t('Mathematics (20 Modules)', 'Математикийн 20 модуль')}
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Тоолох, бодох, бутархай, хэмжилт, Монгол төгрөг (₮) тоолох интерактив хэрэгслүүд.
+            {t(
+              'Interactive counting, arithmetic, fractions, geometry, and Tugrik (₮) grocery shop.',
+              'Тоолох, бодох, бутархай, хэмжилт, Монгол төгрөг (₮) тоолох интерактив хэрэгслүүд.'
+            )}
           </p>
         </div>
 
@@ -76,7 +81,7 @@ export const MathHub: React.FC<MathHubProps> = ({
                 : 'text-slate-600 dark:text-slate-400'
             }`}
           >
-            Анхан
+            {t('Beginner', 'Анхан')}
           </button>
           <button
             onClick={() => setDifficulty('intermediate')}
@@ -86,7 +91,7 @@ export const MathHub: React.FC<MathHubProps> = ({
                 : 'text-slate-600 dark:text-slate-400'
             }`}
           >
-            Дунд
+            {t('Intermediate', 'Дунд')}
           </button>
           <button
             onClick={() => setDifficulty('advanced')}
@@ -96,7 +101,7 @@ export const MathHub: React.FC<MathHubProps> = ({
                 : 'text-slate-600 dark:text-slate-400'
             }`}
           >
-            Ахисан
+            {t('Advanced', 'Ахисан')}
           </button>
         </div>
       </div>
@@ -143,18 +148,26 @@ export const MathHub: React.FC<MathHubProps> = ({
                   </div>
 
                   <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                    {mod.titleMn}
+                    {isTranslated ? mod.titleMn : mod.title}
                   </h3>
-                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-                    {mod.title}
-                  </div>
+                  {isTranslated ? (
+                    <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+                      {mod.title}
+                    </div>
+                  ) : (
+                    <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                      {mod.titleMn}
+                    </div>
+                  )}
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                    {mod.descriptionMn}
+                    {isTranslated
+                      ? mod.descriptionMn
+                      : `Interactive mathematics lesson on ${mod.title.toLowerCase()}. Tap to practice!`}
                   </p>
                 </div>
 
                 <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  <span>{isCompleted ? 'Дахин бодох' : 'Бодох'}</span>
+                  <span>{isCompleted ? t('Review Math', 'Дахин бодох') : t('Solve Math', 'Бодох')}</span>
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
@@ -182,6 +195,7 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
   onBack,
   onComplete,
 }) => {
+  const { t, isTranslated } = useTranslation();
   const [stepIndex, setStepIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
@@ -261,11 +275,11 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
           className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Математикийн цэс рүү буцах</span>
+          <span>{t('Back to Math Hub', 'Математикийн цэс рүү буцах')}</span>
         </button>
 
         <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-          {module.titleMn}
+          {isTranslated ? module.titleMn : module.title}
         </span>
       </div>
 
@@ -273,13 +287,21 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
       <div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <span>{module.icon}</span>
-          <span>{module.titleMn}</span>
+          <span>{isTranslated ? module.titleMn : module.title}</span>
         </h2>
-        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-          {module.title}
-        </p>
+        {isTranslated ? (
+          <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+            {module.title}
+          </p>
+        ) : (
+          <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+            {module.titleMn}
+          </p>
+        )}
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-          {module.descriptionMn}
+          {isTranslated
+            ? module.descriptionMn
+            : `Interactive mathematics exercise on ${module.title.toLowerCase()}. Solve the problems below!`}
         </p>
       </div>
 
@@ -288,10 +310,11 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
         <div className="space-y-4 max-w-lg mx-auto text-center py-2">
           <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Яг {targetCount} ширхэг алим товшиж тоолоорой!
+              {t(`Tap and count exactly ${targetCount} apples!`, `Яг ${targetCount} ширхэг алим товшиж тоолоорой!`)}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Одоо сонгосон: <span className="font-bold text-emerald-600 text-sm tabular-nums">{clickedCounters.length}</span> / {targetCount}
+              {t('Selected: ', 'Одоо сонгосон: ')}
+              <span className="font-bold text-emerald-600 text-sm tabular-nums">{clickedCounters.length}</span> / {targetCount}
             </p>
           </div>
 
@@ -329,24 +352,24 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
               }}
               className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm"
             >
-              Шалгах
+              {t('Check', 'Шалгах')}
             </button>
             <button
               onClick={() => setClickedCounters([])}
               className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold"
             >
-              Цэвэрлэх
+              {t('Clear', 'Цэвэрлэх')}
             </button>
           </div>
 
           {isCorrect === true && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-700 dark:text-emerald-300 font-bold text-sm">
-              🎉 Гайхалтай! {targetCount} ширхэгийг яг зөв тоолон оллоо!
+              {t(`🎉 Excellent! You counted exactly ${targetCount} apples!`, `🎉 Гайхалтай! ${targetCount} ширхэгийг яг зөв тоолон оллоо!`)}
             </div>
           )}
           {isCorrect === false && (
             <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl text-rose-700 dark:text-rose-300 text-xs font-semibold">
-              Таны тоо зөрсөн байна. Дахин тоолоод шалгаарай.
+              {t('Count does not match yet. Please try again.', 'Таны тоо зөрсөн байна. Дахин тоолоод шалгаарай.')}
             </div>
           )}
         </div>
@@ -385,11 +408,15 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
               onClick={() => setShowHint(!showHint)}
               className="text-xs text-emerald-700 dark:text-emerald-300 underline font-semibold"
             >
-              {showHint ? 'Тайлбарыг нуух' : '💡 Монгол тайлбар харах'}
+              {showHint
+                ? t('Hide Explanation', 'Тайлбарыг нуух')
+                : t('💡 Show Explanation', '💡 Монгол тайлбар харах')}
             </button>
             {showHint && (
               <div className="p-3 bg-white dark:bg-slate-800 rounded-xl text-xs text-slate-600 dark:text-slate-300 border border-emerald-100">
-                {currentAddition.explain}
+                {isTranslated
+                  ? currentAddition.explain
+                  : `Adding ${currentAddition.a} and ${currentAddition.b} gives ${currentAddition.ans}. Count all circles together!`}
               </div>
             )}
           </div>
@@ -415,7 +442,7 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
 
           {isCorrect === true && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-700 dark:text-emerald-300 font-bold text-center text-sm">
-              🎉 Зөв бодлоо! {currentAddition.a} + {currentAddition.b} = {currentAddition.ans}!
+              {t(`🎉 Correct! ${currentAddition.a} + ${currentAddition.b} = ${currentAddition.ans}!`, `🎉 Зөв бодлоо! ${currentAddition.a} + ${currentAddition.b} = ${currentAddition.ans}!`)}
             </div>
           )}
 
@@ -433,7 +460,7 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
               }}
               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm"
             >
-              Дараагийн бодлого ➔
+              {t('Next Problem ➔', 'Дараагийн бодлого ➔')}
             </button>
           </div>
         </div>
@@ -445,19 +472,20 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
           <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-center space-y-3">
             <div className="text-4xl">{currentItem.emoji}</div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              {currentItem.item} худалдан авах
+              {t(`Buy: ${currentItem.item}`, `${currentItem.item} худалдан авах`)}
             </h3>
             <div className="text-lg font-extrabold text-amber-700 dark:text-amber-400 tabular-nums">
-              Үнэ: ₮{currentItem.price.toLocaleString()}
+              {t(`Price: ₮${currentItem.price.toLocaleString()}`, `Үнэ: ₮${currentItem.price.toLocaleString()}`)}
             </div>
             <div className="text-xs text-slate-500">
-              Таны төлсөн дүн: <span className="font-bold text-slate-800 dark:text-white tabular-nums">₮{walletTotal.toLocaleString()}</span>
+              {t('Amount Paid: ', 'Таны төлсөн дүн: ')}
+              <span className="font-bold text-slate-800 dark:text-white tabular-nums">₮{walletTotal.toLocaleString()}</span>
             </div>
           </div>
 
           {/* Mongolian tögrög banknotes buttons */}
           <div className="text-xs font-bold text-slate-500 text-center">
-            Дэвсгэрт дээр дарж мөнгөө тоолон төлнө үү:
+            {t('Tap banknotes to add cash:', 'Дэвсгэрт дээр дарж мөнгөө тоолон төлнө үү:')}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {[500, 1000, 2000, 5000].map((note) => (
@@ -488,7 +516,7 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
               }}
               className="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow-sm"
             >
-              Худалдаж авах 🛍️
+              {t('Purchase 🛍️', 'Худалдаж авах 🛍️')}
             </button>
             <button
               onClick={() => {
@@ -497,20 +525,29 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
               }}
               className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold"
             >
-              Тэглэх
+              {t('Reset', 'Тэглэх')}
             </button>
           </div>
 
           {isCorrect === true && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-700 dark:text-emerald-300 font-bold text-center text-sm">
-              🎉 Төгс! ₮{currentItem.price.toLocaleString()} яг зөв төлж бараагаа авлаа!
+              {t(
+                `🎉 Perfect! Exactly ₮${currentItem.price.toLocaleString()} paid!`,
+                `🎉 Төгс! ₮${currentItem.price.toLocaleString()} яг зөв төлж бараагаа авлаа!`
+              )}
             </div>
           )}
           {isCorrect === false && (
             <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl text-rose-700 dark:text-rose-300 text-xs font-semibold text-center">
               {walletTotal < currentItem.price
-                ? `Дүн дутуу байна: ₮${(currentItem.price - walletTotal).toLocaleString()} дутаж байна.`
-                : `Илүү төлсөн байна: ₮${(walletTotal - currentItem.price).toLocaleString()} илүү байна.`}
+                ? t(
+                    `Underpaid by ₮${(currentItem.price - walletTotal).toLocaleString()}`,
+                    `Дүн дутуу байна: ₮${(currentItem.price - walletTotal).toLocaleString()} дутаж байна.`
+                  )
+                : t(
+                    `Overpaid by ₮${(walletTotal - currentItem.price).toLocaleString()}`,
+                    `Илүү төлсөн байна: ₮${(walletTotal - currentItem.price).toLocaleString()} илүү байна.`
+                  )}
             </div>
           )}
         </div>
@@ -522,19 +559,22 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
           <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-800/60 text-center space-y-2">
             <div className="text-3xl">{module.icon}</div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              {module.titleMn}
+              {isTranslated ? module.titleMn : module.title}
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-300">
-              {module.descriptionMn}
+              {isTranslated ? module.descriptionMn : `Practice and master ${module.title.toLowerCase()}.`}
             </p>
           </div>
 
           <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/50 space-y-3">
             <div className="text-xs font-bold text-slate-500 uppercase">
-              Дасгал: {difficulty === 'beginner' ? 'Анхан шат' : difficulty === 'intermediate' ? 'Дунд шат' : 'Ахисан шат'}
+              {t(
+                `Exercise: ${difficulty === 'beginner' ? 'Beginner' : difficulty === 'intermediate' ? 'Intermediate' : 'Advanced'}`,
+                `Дасгал: ${difficulty === 'beginner' ? 'Анхан шат' : difficulty === 'intermediate' ? 'Дунд шат' : 'Ахисан шат'}`
+              )}
             </div>
             <div className="text-sm font-semibold text-slate-800 dark:text-white">
-              Бодлогыг алхам алхмаар бодож зөв хариуг сонгоорой:
+              {t('Solve step-by-step and select the correct answer:', 'Бодлогыг алхам алхмаар бодож зөв хариуг сонгоорой:')}
             </div>
             <div className="grid grid-cols-3 gap-2 pt-1">
               {[10, 15, 20].map((n) => (
@@ -562,7 +602,7 @@ const InteractiveMathModule: React.FC<InteractiveMathModuleProps> = ({
               }}
               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-sm"
             >
-              Бодлогыг дуусгах (+3 ⭐, +10 🪙)
+              {t('Complete Lesson (+3 ⭐, +10 🪙)', 'Бодлогыг дуусгах (+3 ⭐, +10 🪙)')}
             </button>
           </div>
         </div>

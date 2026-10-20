@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, BookOpen, Calculator, Scroll, Gamepad2, Sparkles } from 'lucide-react';
+import { useTranslation } from '../../context/TranslationContext';
 
 interface BottomNavProps {
   currentView: string;
@@ -7,12 +8,14 @@ interface BottomNavProps {
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({ currentView, onNavigate }) => {
+  const { t } = useTranslation();
+
   const tabs = [
-    { id: 'home', label: 'Эхлэл', icon: Home, color: 'text-purple-600 dark:text-purple-400' },
-    { id: 'english', label: 'Англи хэл', icon: BookOpen, color: 'text-sky-600 dark:text-sky-400' },
-    { id: 'math', label: 'Математик', icon: Calculator, color: 'text-emerald-600 dark:text-emerald-400' },
-    { id: 'mongolian', label: 'Монгол хэл', icon: Scroll, color: 'text-amber-600 dark:text-amber-400' },
-    { id: 'games', label: 'Тоглоом', icon: Gamepad2, color: 'text-pink-600 dark:text-pink-400' },
+    { id: 'home', label: t('Home', 'Эхлэл'), icon: Home, color: 'text-purple-600 dark:text-purple-400' },
+    { id: 'english', label: t('English', 'Англи хэл'), icon: BookOpen, color: 'text-sky-600 dark:text-sky-400' },
+    { id: 'math', label: t('Math', 'Математик'), icon: Calculator, color: 'text-emerald-600 dark:text-emerald-400' },
+    { id: 'mongolian', label: t('Mongolian', 'Монгол хэл'), icon: Scroll, color: 'text-amber-600 dark:text-amber-400' },
+    { id: 'games', label: t('Games', 'Тоглоом'), icon: Gamepad2, color: 'text-pink-600 dark:text-pink-400' },
   ];
 
   return (

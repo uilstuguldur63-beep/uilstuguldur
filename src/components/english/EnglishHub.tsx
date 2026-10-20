@@ -15,6 +15,7 @@ import { LessonModule, UserProfile } from '../../types';
 import { speechService } from '../../services/speechService';
 import { fireCelebrationConfetti } from '../common/Confetti';
 import { storageService } from '../../services/storageService';
+import { useTranslation } from '../../context/TranslationContext';
 
 interface EnglishHubProps {
   activeProfile: UserProfile;
@@ -29,6 +30,7 @@ export const EnglishHub: React.FC<EnglishHubProps> = ({
   onNavigate,
   onCompleteLesson,
 }) => {
+  const { t, isTranslated } = useTranslation();
   const [selectedModule, setSelectedModule] = useState<LessonModule | null>(() => {
     if (initialModuleId) {
       return englishModules.find((m) => m.id === initialModuleId) || null;
@@ -75,11 +77,14 @@ export const EnglishHub: React.FC<EnglishHubProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-2xl">🇬🇧</span>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Англи хэлний 20 модуль
+              {t('English Curriculum (20 Modules)', 'Англи хэлний 20 модуль')}
             </h1>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Англи багшийн цэвэр дуудлага, зурагт дасгал, үсэг бичилт, харилцан яриа.
+            {t(
+              'Clear English teacher voice, illustrated exercises, letter writing, and real dialogues.',
+              'Англи багшийн цэвэр дуудлага, зурагт дасгал, үсэг бичилт, харилцан яриа.'
+            )}
           </p>
         </div>
 
@@ -93,7 +98,7 @@ export const EnglishHub: React.FC<EnglishHubProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
-            Бүгд (20)
+            {t('All (20)', 'Бүгд (20)')}
           </button>
           <button
             onClick={() => setActiveTabFilter('basics')}
@@ -103,7 +108,7 @@ export const EnglishHub: React.FC<EnglishHubProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
-            Үсэг & Тоо
+            {t('Letters & Numbers', 'Үсэг & Тоо')}
           </button>
           <button
             onClick={() => setActiveTabFilter('vocabulary')}
@@ -113,7 +118,7 @@ export const EnglishHub: React.FC<EnglishHubProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
-            Үгсийн сан
+            {t('Vocabulary', 'Үгсийн сан')}
           </button>
           <button
             onClick={() => setActiveTabFilter('practice')}
@@ -123,7 +128,7 @@ export const EnglishHub: React.FC<EnglishHubProps> = ({
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
-            Дадлага & Дүрэм
+            {t('Practice & Grammar', 'Дадлага & Дүрэм')}
           </button>
         </div>
       </div>
@@ -172,16 +177,18 @@ export const EnglishHub: React.FC<EnglishHubProps> = ({
                   <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                     {mod.title}
                   </h3>
-                  <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
-                    {mod.titleMn}
-                  </div>
+                  {isTranslated ? (
+                    <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
+                      {mod.titleMn}
+                    </div>
+                  ) : null}
                   <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                    {mod.descriptionMn}
+                    {isTranslated ? mod.descriptionMn : `Interactive lesson on ${mod.title.toLowerCase()}. Tap to begin!`}
                   </p>
                 </div>
 
                 <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs font-semibold text-purple-600 dark:text-purple-400">
-                  <span>{isCompleted ? 'Дахин давтах' : 'Эхлэх'}</span>
+                  <span>{isCompleted ? t('Review Lesson', 'Дахин давтах') : t('Start Lesson', 'Эхлэх')}</span>
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
@@ -207,6 +214,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
   onBack,
   onComplete,
 }) => {
+  const { t, isTranslated } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswerCorrect, setIsAnswerCorrect] = useState<boolean | null>(null);
@@ -378,7 +386,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
           className="flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Бүх хичээл рүү буцах</span>
+          <span>{t('Back to Lessons', 'Бүх хичээл рүү буцах')}</span>
         </button>
 
         <div className="flex items-center gap-2">
@@ -388,18 +396,22 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
         </div>
       </div>
 
-      {/* Module Title & Written Mongolian instructions */}
+      {/* Module Title & Instructions */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <span>{module.icon}</span>
             <span>{module.title}</span>
           </h2>
-          <p className="text-sm font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
-            {module.titleMn}
-          </p>
+          {isTranslated ? (
+            <p className="text-sm font-semibold text-purple-600 dark:text-purple-400 mt-0.5">
+              {module.titleMn}
+            </p>
+          ) : null}
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-            {module.descriptionMn}
+            {isTranslated
+              ? module.descriptionMn
+              : `Interactive lesson on ${module.title.toLowerCase()}. Tap items to hear native pronunciation, practice vocabulary, and earn stars!`}
           </p>
         </div>
 
@@ -435,14 +447,21 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
                 <div className="text-xs text-slate-400 font-mono mt-0.5">
                   {item.phonetic}
                 </div>
-                <div className="text-xs text-purple-500 font-medium mt-1">
-                  {item.mn}
-                </div>
+                {isTranslated ? (
+                  <div className="text-xs text-purple-500 font-medium mt-1">
+                    {item.mn}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
           <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/30 text-xs text-purple-800 dark:text-purple-200 flex items-center justify-between">
-            <span>💡 Картыг товшиж англи авиа, үг, жишээ өгүүлбэрийг сонсоорой!</span>
+            <span>
+              {t(
+                '💡 Tap each card to hear its native phonics, word, and sentence!',
+                '💡 Картыг товшиж англи авиа, үг, жишээ өгүүлбэрийг сонсоорой!'
+              )}
+            </span>
             <button
               onClick={() => {
                 speechService.playSoundEffect('correct');
@@ -451,7 +470,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               }}
               className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm"
             >
-              Дуусгах & Од авах ⭐
+              {t('Finish & Claim Star ⭐', 'Дуусгах & Од авах ⭐')}
             </button>
           </div>
         </div>
@@ -476,9 +495,11 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
                 <div className="text-base font-bold text-slate-800 dark:text-white mt-2">
                   {c.name}
                 </div>
-                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  {c.mn}
-                </div>
+                {isTranslated ? (
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    {c.mn}
+                  </div>
+                ) : null}
                 <div className="text-xs text-purple-600 dark:text-purple-300 mt-1">
                   {c.item}
                 </div>
@@ -494,7 +515,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               }}
               className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-sm"
             >
-              Хичээлийг дуусгах (+3 ⭐, +10 🪙)
+              {t('Complete Lesson (+3 ⭐, +10 🪙)', 'Хичээлийг дуусгах (+3 ⭐, +10 🪙)')}
             </button>
           </div>
         </div>
@@ -505,14 +526,22 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
         <div className="space-y-5 text-center max-w-lg mx-auto py-2">
           <div className="text-6xl mb-2">{currentSpelling.emoji}</div>
           <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Монгол утга: <span className="text-purple-600 font-bold">{currentSpelling.hintMn}</span>
+            {isTranslated ? (
+              <>
+                Монгол утга: <span className="text-purple-600 font-bold">{currentSpelling.hintMn}</span>
+              </>
+            ) : (
+              <>
+                Spelling Target: <span className="text-purple-600 font-bold">{currentSpelling.target}</span>
+              </>
+            )}
           </div>
 
           {/* Assembled Word Slots */}
           <div className="flex justify-center gap-2 min-h-[56px] p-2 bg-slate-100 dark:bg-slate-700/50 rounded-2xl border-2 border-dashed border-purple-200 dark:border-purple-800">
             {assembledWord.length === 0 ? (
               <span className="text-xs text-slate-400 self-center">
-                Доорх үсгүүдийг дарж үг бүтээгээрэй
+                {t('Tap the letters below to assemble the word', 'Доорх үсгүүдийг дарж үг бүтээгээрэй')}
               </span>
             ) : (
               assembledWord.map((l, i) => (
@@ -541,13 +570,13 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
 
           {isAnswerCorrect === true && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-700 dark:text-emerald-300 font-bold text-sm">
-              🎉 Маш сайн! Зөв бичлээ: {currentSpelling.target}!
+              {t(`🎉 Excellent! You spelled: ${currentSpelling.target}!`, `🎉 Маш сайн! Зөв бичлээ: ${currentSpelling.target}!`)}
             </div>
           )}
 
           {isAnswerCorrect === false && (
             <div className="p-3 bg-rose-50 dark:bg-rose-950/40 rounded-xl text-rose-700 dark:text-rose-300 text-xs font-semibold">
-              Дахин оролдоод үзээрэй! Үсгийн дарааллаа шалгаарай.
+              {t('Try again! Check the spelling order.', 'Дахин оролдоод үзээрэй! Үсгийн дарааллаа шалгаарай.')}
             </div>
           )}
 
@@ -557,7 +586,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Дахин эхлэх</span>
+              <span>{t('Reset', 'Дахин эхлэх')}</span>
             </button>
 
             <button
@@ -570,7 +599,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               }}
               className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm"
             >
-              Дараагийн үг ➔
+              {t('Next Word ➔', 'Дараагийн үг ➔')}
             </button>
           </div>
         </div>
@@ -580,14 +609,14 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
       {module.id === 'eng-13' && (
         <div className="space-y-5 text-center max-w-xl mx-auto py-2">
           <div className="text-sm font-semibold text-purple-600 dark:text-purple-400">
-            Монгол утга: {currentSentence.mn}
+            {isTranslated ? `Монгол утга: ${currentSentence.mn}` : `Target Sentence: "${currentSentence.correct}"`}
           </div>
 
           {/* Constructed Sentence Box */}
           <div className="min-h-[64px] p-3 bg-purple-50 dark:bg-purple-950/30 rounded-2xl border-2 border-purple-200 dark:border-purple-800 flex flex-wrap gap-2 items-center justify-center">
             {selectedWords.length === 0 ? (
               <span className="text-xs text-slate-400">
-                Доорх үгсийг товшиж өгүүлбэр бүтээгээрэй
+                {t('Tap the words below to construct the sentence', 'Доорх үгсийг товшиж өгүүлбэр бүтээгээрэй')}
               </span>
             ) : (
               selectedWords.map((w, idx) => (
@@ -616,7 +645,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
 
           {isAnswerCorrect === true && (
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl text-emerald-700 dark:text-emerald-300 font-bold text-sm">
-              ✨ Төгс! Өгүүлбэр: "{currentSentence.correct}"
+              {t(`✨ Perfect! Sentence: "${currentSentence.correct}"`, `✨ Төгс! Өгүүлбэр: "${currentSentence.correct}"`)}
             </div>
           )}
 
@@ -630,7 +659,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Шинэчлэх</span>
+              <span>{t('Reset', 'Шинэчлэх')}</span>
             </button>
 
             <button
@@ -643,7 +672,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               }}
               className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm"
             >
-              Дараагийн дасгал ➔
+              {t('Next Exercise ➔', 'Дараагийн дасгал ➔')}
             </button>
           </div>
         </div>
@@ -655,7 +684,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
           <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-purple-600">
-                Асуулт #{currentStep + 1} / {quizQuestions.length}
+                {t(`Question #${currentStep + 1} / ${quizQuestions.length}`, `Асуулт #${currentStep + 1} / ${quizQuestions.length}`)}
               </span>
               <button
                 onClick={() => speak(currentQuiz.q)}
@@ -668,7 +697,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               {currentQuiz.q}
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              💡 {currentQuiz.hintMn}
+              {isTranslated ? `💡 ${currentQuiz.hintMn}` : '💡 Tap the speaker icon to listen, then select the right answer.'}
             </p>
           </div>
 
@@ -704,7 +733,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               }}
               className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm"
             >
-              Дараагийн асуулт ➔
+              {t('Next Question ➔', 'Дараагийн асуулт ➔')}
             </button>
           </div>
         </div>
@@ -716,10 +745,13 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
           <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800/60 flex items-center justify-between">
             <div className="space-y-1">
               <div className="text-sm font-bold text-sky-900 dark:text-sky-200">
-                Интерактив дасгал ба сонсох хичээл
+                {t('Interactive Practice & Listening', 'Интерактив дасгал ба сонсох хичээл')}
               </div>
               <div className="text-xs text-sky-700 dark:text-sky-300">
-                Англи багшийн дуудлагыг сонсож, давтан хэлээрэй.
+                {t(
+                  'Listen to the teacher pronunciation and practice speaking aloud.',
+                  'Англи багшийн дуудлагыг сонсож, давтан хэлээрэй.'
+                )}
               </div>
             </div>
             <button
@@ -727,7 +759,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               className="px-3.5 py-2 rounded-xl bg-sky-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm"
             >
               <Play className="w-3.5 h-3.5" />
-              <span>Сонсох</span>
+              <span>{t('Listen', 'Сонсох')}</span>
             </button>
           </div>
 
@@ -738,10 +770,13 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               className="cursor-pointer p-4 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-purple-400 bg-slate-50 dark:bg-slate-700/50"
             >
               <div className="text-sm font-bold text-slate-900 dark:text-white">
-                1. Сонсож давтах
+                {t('1. Listen & Repeat', '1. Сонсож давтах')}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Товшиж англиар сонсоод даган давтан хэлээрэй.
+                {t(
+                  'Tap to hear in English and practice speaking aloud.',
+                  'Товшиж англиар сонсоод даган давтан хэлээрэй.'
+                )}
               </p>
             </div>
 
@@ -750,10 +785,13 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               className="cursor-pointer p-4 rounded-2xl border border-slate-200 dark:border-slate-700 hover:border-purple-400 bg-slate-50 dark:bg-slate-700/50"
             >
               <div className="text-sm font-bold text-slate-900 dark:text-white">
-                2. Баталгаажуулах
+                {t('2. Complete Lesson', '2. Баталгаажуулах')}
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Дасгалыг амжилттай дуусгаж од, зоос цуглуулаарай.
+                {t(
+                  'Complete this exercise to collect stars and coins.',
+                  'Дасгалыг амжилттай дуусгаж од, зоос цуглуулаарай.'
+                )}
               </p>
             </div>
           </div>
@@ -767,7 +805,7 @@ const InteractiveEnglishModule: React.FC<InteractiveEnglishModuleProps> = ({
               }}
               className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-sm"
             >
-              Хичээлийг дуусгах (+3 ⭐, +10 🪙)
+              {t('Complete Lesson (+3 ⭐, +10 🪙)', 'Хичээлийг дуусгах (+3 ⭐, +10 🪙)')}
             </button>
           </div>
         </div>

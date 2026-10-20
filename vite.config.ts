@@ -17,7 +17,13 @@ function teacherApiPlugin(): Plugin {
           req.on('end', async () => {
             try {
               const payload = JSON.parse(body || '{}');
-              const { message, learnerProfile = 'sister', history = [] } = payload;
+              const {
+                message,
+                learnerProfile = 'sister',
+                learnerLevel = 2,
+                languageMode = 'auto', // 'auto' | 'mn' | 'en'
+                history = [],
+              } = payload;
 
               const apiKey = process.env.GEMINI_API_KEY;
 
@@ -32,37 +38,79 @@ function teacherApiPlugin(): Plugin {
                 });
 
                 const systemInstruction = `
-You are Mimi, an enthusiastic, kind, and cheerful AI English teacher for an educational app in Mongolia.
-CRITICAL LANGUAGE RULES:
-1. You MUST speak in ENGLISH ONLY.
-2. Under NO circumstance should you speak or output Mongolian in your speechText or subtitle.
-3. Your primary speech must be 100% natural, correct English.
-4. If the learner profile is "sister" (beginner, young learner 5-8 yrs):
-   - Keep answers under 2-3 sentences.
-   - Use simple, joyful English vocabulary (colors, animals, food, school, family).
-   - Praise them warmly ("Super star!", "Well done!").
-   - Ask an easy follow-up question.
-5. If the learner profile is "mom" (adult learner):
-   - Practical conversational English for daily life, travel, work, and family.
-   - Gently correct any grammar or spelling mistakes in English.
-   - Offer useful phrases.
-6. Provide a written Mongolian translation/hint in the "mongolianHint" field ONLY for understanding. Do NOT mix Mongolian into speechText.
+You are Mimi, a warm, patient, and highly intelligent bilingual AI Tutor for the educational app "Миний дүү бас ээж" (My Little Sister and Mom).
 
-Format output as pure JSON:
+CORE PERSONALITY & BEHAVIOR:
+1. BILINGUAL CAPABILITY (MONGOLIAN & ENGLISH):
+   - You are completely fluent in both Mongolian (Монгол хэл, Кирилл цагаан толгой ө, ү үсгүүдийг маш зөв таньж хэрэглэнэ) and English.
+   - If the user wrote in Mongolian or chosen language is "mn", respond naturally and helpfully in Mongolian.
+   - If the user wrote in English or chosen language is "en", respond naturally and encouragingly in English.
+   - If languageMode is "auto", detect user's language and respond in the matching language, or provide bilingual guidance when helpful.
+   - You teach and answer questions about:
+     * English language, vocabulary, grammar, sentences, and conversation.
+     * Mathematics (тоо бодлого, нэмэх, хасах, үржүүлэх, хуваах, логик).
+     * Mongolian language, 35 Cyrillic letters, the 7 basic vowels (эгшиг үсэг), spelling rules (зөв бичих дүрэм).
+     * Word-making, puzzles, reading, and vocabulary building.
+
+2. ABSOLUTELY NO REPETITIVE ANSWERS:
+   - NEVER repeat the same greeting when a chat opens or when answering questions.
+   - NEVER give identical answers to different questions.
+   - ALWAYS read the conversation history to make your response relevant, fresh, and progressive.
+   - If a student asks a follow-up or says they don't understand, DO NOT repeat the previous explanation! Explain the concept from a new angle using simpler words, step-by-step numbers, analogies, or concrete real-world examples.
+   - Vary your praise and encouragement (do not say "Super star!" every time; use genuine, situational encouragement).
+
+3. ADAPTATION TO SPECIFIC LEARNER PROFILE & LEVEL:
+   - Profile "mom" (Starting Level 5, currently Level ${learnerLevel}):
+     * Adult learner seeking practical everyday conversational English, grammar clarity, mental math, and intermediate word puzzles.
+     * Provide slightly more challenging, sophisticated explanations with real-world usefulness.
+     * Explain rules clearly (e.g. why a rule applies in Mongolian spelling or English verb tenses).
+   - Profile "sister" (Starting Level 2, currently Level ${learnerLevel}):
+     * Young learner (child) starting with gentle, friendly guidance.
+     * Use short, easy sentences, friendly emojis, clear steps, and playful examples (animals, toys, fruit, colors).
+     * Praise small efforts warmly and guide step by step without overwhelming.
+
+4. OUTPUT FORMAT:
+Output MUST be pure, valid JSON with this exact schema:
 {
-  "speechText": "Clear English text for speech synthesis",
-  "subtitle": "English subtitle matching speechText",
-  "mongolianHint": "Монгол бичгэн орчуулга / тайлбар",
-  "encouragement": "High five! Excellent work!",
-  "suggestedReplies": ["English option 1", "English option 2"]
+  "speechText": "Natural, direct spoken/chat response by Mimi in the target language (Mongolian or English)",
+  "language": "mn" or "en",
+  "subtitle": "Helpful translation or summary in the alternate language to assist learning",
+  "mongolianHint": "A helpful hint or grammar/math tip in clear Mongolian",
+  "encouragement": "Varied, non-repetitive encouraging sentence",
+  "suggestedReplies": ["Dynamic suggestion 1", "Dynamic suggestion 2", "Dynamic suggestion 3"]
 }
 `;
 
-                const prompt = `Learner said: "${message}". Please respond kindly as Mimi the English teacher. Keep it supportive and fun!`;
+                // Build contents array including previous history for deep context
+                const contents: any[] = [];
+
+                if (Array.isArray(history) && history.length > 0) {
+                  // Pass up to 10 most recent turns for context
+                  const recent = history.slice(-10);
+                  for (const h of recent) {
+                    const role = h.role === 'model' || h.role === 'assistant' ? 'model' : 'user';
+                    const textContent = h.content || h.text || '';
+                    if (textContent.trim()) {
+                      contents.push({
+                        role,
+                        parts: [{ text: textContent }],
+                      });
+                    }
+                  }
+                }
+
+                contents.push({
+                  role: 'user',
+                  parts: [
+                    {
+                      text: `Learner Profile: ${learnerProfile} (Level ${learnerLevel}). Language preference: ${languageMode}. Message: "${message}". Please respond thoughtfully and naturally as Mimi.`,
+                    },
+                  ],
+                });
 
                 const response = await ai.models.generateContent({
                   model: 'gemini-3.8-flash',
-                  contents: prompt,
+                  contents,
                   config: {
                     systemInstruction,
                     responseMimeType: 'application/json',
@@ -76,13 +124,25 @@ Format output as pure JSON:
                 return;
               }
 
-              // Resilient fallback when API key is not present
-              const fallbackResponse = getFallbackTeacherResponse(message, learnerProfile);
+              // Dynamic fallback when API key is not present or offline
+              const fallbackResponse = getFallbackTeacherResponse(
+                message,
+                learnerProfile,
+                learnerLevel,
+                languageMode,
+                history
+              );
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(fallbackResponse));
             } catch (err: any) {
               console.error('Teacher API error:', err);
-              const fallback = getFallbackTeacherResponse('hello', 'sister');
+              const fallback = getFallbackTeacherResponse(
+                'туслаач',
+                'sister',
+                2,
+                'auto',
+                []
+              );
               res.setHeader('Content-Type', 'application/json');
               res.end(JSON.stringify(fallback));
             }
@@ -95,55 +155,172 @@ Format output as pure JSON:
   };
 }
 
-function getFallbackTeacherResponse(userMsg: string, profile: string) {
-  const lower = (userMsg || '').toLowerCase();
+/**
+ * Intelligent, varied, non-repetitive fallback responses for math, Mongolian, English, word puzzles
+ */
+function getFallbackTeacherResponse(
+  userMsg: string,
+  profile: string,
+  level: number,
+  langMode: string,
+  history: any[] = []
+) {
+  const text = (userMsg || '').trim();
+  const lower = text.toLowerCase();
+  const hasCyrillic = /[\u0400-\u04FF]/.test(text);
+  const isMom = profile === 'mom';
 
-  if (profile === 'sister') {
-    if (lower.includes('blue') || lower.includes('red') || lower.includes('color') || lower.includes('yellow')) {
+  // Determine language to answer in
+  const respondInMn =
+    langMode === 'mn' || (langMode === 'auto' && (hasCyrillic || lower.includes('сайн') || lower.includes('тоо') || lower.includes('үсэг')));
+
+  // Math queries
+  const mathMatch = text.match(/(\d+)\s*([\+\-\*\/xX×÷])\s*(\d+)/);
+  if (mathMatch) {
+    const num1 = parseInt(mathMatch[1], 10);
+    const op = mathMatch[2];
+    const num2 = parseInt(mathMatch[3], 10);
+    let ans = 0;
+    let opName = '';
+    let opNameEn = '';
+
+    if (op === '+' || op === 'нэмэх') {
+      ans = num1 + num2;
+      opName = 'нэмэхэд';
+      opNameEn = 'plus';
+    } else if (op === '-' || op === 'хасах') {
+      ans = num1 - num2;
+      opName = 'хасахад';
+      opNameEn = 'minus';
+    } else if (op === '*' || op === 'x' || op === 'X' || op === '×' || op === 'үржүүлэх') {
+      ans = num1 * num2;
+      opName = 'үржүүлэхэд';
+      opNameEn = 'multiplied by';
+    } else {
+      ans = num2 !== 0 ? Math.floor(num1 / num2) : 0;
+      opName = 'хуваахад';
+      opNameEn = 'divided by';
+    }
+
+    if (respondInMn) {
       return {
-        speechText: 'I love colors! Blue and yellow are so bright and cheerful. What animal do you like?',
-        subtitle: 'I love colors! Blue and yellow are so bright and cheerful. What animal do you like?',
-        mongolianHint: 'Би өнгөнд маш дуртай! Цэнхэр, шар өнгө үнэхээр цовоо сэргэлэн харагддаг. Чи ямар амьтанд дуртай вэ?',
-        encouragement: 'Great job naming your favorite color!',
-        suggestedReplies: ['I like cats.', 'I like cute rabbits.', 'I like big elephants.'],
+        speechText: `${num1} дээр ${num2}-ийг ${opName} хариу нь ${ans} гарна! Танд үүнтэй төстэй бодлого бодох уу?`,
+        language: 'mn',
+        subtitle: `${num1} ${opNameEn} ${num2} equals ${ans}! Would you like to solve another math problem?`,
+        mongolianHint: `Тоо бодох дараалал: ${num1} ${op} ${num2} = ${ans}`,
+        encouragement: 'Тооны бодлогоо маш хурдан, зөв бодож байна шүү!',
+        suggestedReplies: [`${ans} + 5 хэд вэ?`, 'Өөр хэцүү бодлого өгөөч', 'Англи хэл рүү шилжих'],
+      };
+    } else {
+      return {
+        speechText: `That is great! ${num1} ${opNameEn} ${num2} is equal to ${ans}. Math is like solving exciting puzzles!`,
+        language: 'en',
+        subtitle: `${num1} ба ${num2}-ийн хариу ${ans} гарна. Математик бол сонирхолтой таавар юм!`,
+        mongolianHint: `Math calculation: ${num1} ${op} ${num2} = ${ans}`,
+        encouragement: 'Fantastic math thinking!',
+        suggestedReplies: [`What is ${ans} plus 10?`, 'Can you give me a word problem?', 'Let us practice English colors.'],
       };
     }
-    if (lower.includes('cat') || lower.includes('dog') || lower.includes('animal') || lower.includes('rabbit')) {
+  }
+
+  // Mongolian Vowel / Alphabet queries
+  if (lower.includes('эгшиг') || lower.includes('үсэг') || lower.includes('цагаан толгой') || lower.includes('vowel')) {
+    if (respondInMn) {
       return {
-        speechText: 'Animals are fantastic friends! Cats say meow, and dogs say woof. Can you jump like a happy rabbit?',
-        subtitle: 'Animals are fantastic friends! Cats say meow, and dogs say woof. Can you jump like a happy rabbit?',
-        mongolianHint: 'Амьтад бол гайхалтай сайн найзууд! Муур мяу, нохой ваав гэдэг. Чи баяртай туулай шиг үсэрч чадах уу?',
-        encouragement: 'Super! You speak wonderful English!',
-        suggestedReplies: ['Yes, I can jump!', 'I have a little cat.', 'Let us count to ten.'],
+        speechText:
+          'Монгол хэлэнд үндсэн 7 эгшиг бий: А, Э, И, О, У, Ө, Ү. Эдгээр нь эр эгшиг (А, О, У), эм эгшиг (Э, Ө, Ү), саармаг эгшиг (И) гэж хуваагддаг. Та аль үсгийг илүү нарийвчлан сонирхмоор байна?',
+        language: 'mn',
+        subtitle: 'Mongolian has 7 basic vowels: A, E, I, O, U, Ö, Ü categorized into masculine, feminine and neutral.',
+        mongolianHint: 'Эр эгшиг: А, О, У | Эм эгшиг: Э, Ө, Ү | Саармаг: И',
+        encouragement: 'Цагаан толгойгоо хичээнгүй сурч байгаа танд баяр хүргэе!',
+        suggestedReplies: ['Яагаад Я, Е, Ё, Ю эгшиг биш вэ?', 'А үсгээр эхэлсэн 3 үг хэлээч', 'Эр, эм эгшгийн дүрэм юу вэ?'],
+      };
+    } else {
+      return {
+        speechText:
+          'In Mongolian, there are seven basic vowels: A, E, I, O, U, Ö, Ü. They follow vowel harmony rules! In English, our main vowels are A, E, I, O, U. Notice how fun they are to compare!',
+        language: 'en',
+        subtitle: 'Монгол хэлэнд 7 үндсэн эгшиг байдаг бол англи хэлэнд A, E, I, O, U гэсэн 5 эгшиг бий.',
+        mongolianHint: 'Vowel comparison: Mongolian 7 vowels vs English 5 vowels',
+        encouragement: 'Comparing languages makes you smarter every day!',
+        suggestedReplies: ['What is vowel harmony?', 'Give me 3 English words with vowel A', 'Let us practice spelling'],
       };
     }
-    return {
-      speechText: 'Hello my sweet friend! I am Mimi, your English teacher. Let us learn and have fun together today!',
-      subtitle: 'Hello my sweet friend! I am Mimi, your English teacher. Let us learn and have fun together today!',
-      mongolianHint: 'Сайн уу, хайрт найз минь! Би бол чиний англи хэлний багш Мими. Өнөөдөр хоёулаа хамтдаа сурч, хөгжилдөцгөөе!',
-      encouragement: 'Welcome! You are ready to learn!',
-      suggestedReplies: ['Hello, Mimi!', 'I am ready to learn.', 'What is our first lesson?'],
-    };
   }
 
-  // Mom profile
-  if (lower.includes('market') || lower.includes('shop') || lower.includes('buy') || lower.includes('price')) {
-    return {
-      speechText: 'Shopping conversations are very practical. You can ask: "How much does this cost?" or "May I pay by card, please?" Practice saying: "Excuse me, where is the fresh fruit section?"',
-      subtitle: 'Shopping conversations are very practical. You can ask: "How much does this cost?" or "May I pay by card, please?" Practice saying: "Excuse me, where is the fresh fruit section?"',
-      mongolianHint: 'Дэлгүүрт хэрэглэгддэг яриа маш практик ач холбогдолтой. "Энэ ямар үнэтэй вэ?" эсвэл "Картаар төлж болох уу?" гэж асууж дадаарай.',
-      encouragement: 'Practical everyday English mastered step-by-step!',
-      suggestedReplies: ['How much is this loaf of bread?', 'Can you help me find this item?', 'Thank you for your assistance.'],
-    };
+  // Word-making / vocabulary queries
+  if (lower.includes('үг') || lower.includes('word') || lower.includes('бүтээх') || lower.includes('spell')) {
+    if (isMom) {
+      return {
+        speechText: respondInMn
+          ? 'Үг бүтээх дасгалд үгийн үндэс, дагавар нөхцөлүүдийг зөв холбох нь чухал. Жишээлбэл "Эрдэм" гэдэг үгнээс "Эрдэмтэн", "Эрдэмтэй" гэсэн үг үүснэ. Англиар "Educate -> Education -> Educator" гэж хувирдагтай төстэй.'
+          : 'Building vocabulary is all about prefixes, roots, and suffixes! For example, from "friend" we can make "friendly", "friendship", and "unfriendly". Which word shall we explore next?',
+        language: respondInMn ? 'mn' : 'en',
+        subtitle: respondInMn
+          ? 'Word formation connects roots with suffixes, expanding your vocabulary quickly.'
+          : 'Үг бүтээхдээ язгуур дээр залгавар залгаснаар үгийн сангаа хурдан тэлж болно.',
+        mongolianHint: 'Үг бүтээх жишээ: Үндэс + Дагавар',
+        encouragement: 'Таны үгийн баялаг өдөр бүр баяжиж байна!',
+        suggestedReplies: ['"Success" гэдэг үгээр дасгал хийе', 'Монгол хэлний нийлмэл үгс', 'Англи өдөр тутмын хэллэг'],
+      };
+    } else {
+      return {
+        speechText: respondInMn
+          ? 'Үг бүтээцгээе! «Н-О-М» гэж эвлүүлбэл «НОМ» 📖 болно! «А-Л-И-М» гэвэл амттай улаан «АЛИМ» 🍎 болно шүү дээ! Өөр ямар үг бүтээх үү?'
+          : 'Let us make fun words! Put "C-A-T" together and we get "CAT" 🐱! Put "S-U-N" together and we get "SUN" ☀️! Can you spell your name?',
+        language: respondInMn ? 'mn' : 'en',
+        subtitle: respondInMn
+          ? 'Let us build words with letters and pictures together!'
+          : 'Үсгүүдээ холбоод өхөөрдөм шинэ үгс бүтээцгээе!',
+        mongolianHint: 'Үсэг эвлүүлж үг бүтээх тоглоом',
+        encouragement: 'Чи үнэхээр мундаг үсэг эвлүүлэгч шүү!',
+        suggestedReplies: ['Нар гэдэг үгийг зуръя', 'Нохой гэж яаж бичих вэ?', 'Англиар муур гэж юу вэ?'],
+      };
+    }
   }
 
-  return {
-    speechText: 'Hello! I am delighted to practice conversational English with you. Today we can practice everyday conversations, travel vocabulary, or grammar. What would you like to explore first?',
-    subtitle: 'Hello! I am delighted to practice conversational English with you. Today we can practice everyday conversations, travel vocabulary, or grammar. What would you like to explore first?',
-    mongolianHint: 'Сайн байна уу! Тантай хамт англиар ярианы дадлага хийхдээ баяртай байна. Өнөөдөр өдөр тутмын яриа, аялал, дүрэм дадлагажиж болно. Алинаас нь эхлэх вэ?',
-    encouragement: 'Consistency is the key to mastering English!',
-    suggestedReplies: ['Let us practice daily family conversations.', 'Can we review verb tenses?', 'Let us practice ordering food.'],
-  };
+  // Conversational response tailored to learner level and language
+  if (respondInMn) {
+    if (isMom) {
+      return {
+        speechText: `Сайн байна уу! Би таны найдвартай багш Мими байна (Түвшин ${level}). Англи хэлний ярианы дасгал, дүрмийн тайлбар, тоо бодлого эсвэл үг бүтээх дасгалын алийг нь хиймээр байна вэ? Би ямар ч сэдвээр хамтран ажиллахад бэлэн байна.`,
+        language: 'mn',
+        subtitle: 'Hello! I am your bilingual tutor Mimi. What topic would you like to explore today?',
+        mongolianHint: 'Түвшин 5+: Яриа, дүрэм, тоо, үг бүтээх',
+        encouragement: 'Таны хичээл зүтгэл өдөр бүр гайхалтай үр дүн авчирч байна!',
+        suggestedReplies: ['Дэлгүүрт ярих англи хэл заагаач', 'Математикийн бодлого бодъё', 'Зөв бичих дүрмээс асуух зүйл байна'],
+      };
+    } else {
+      return {
+        speechText: `Сайн уу, бяцхан дүү минь! Багш Мими нь чамдаа туслахад бэлэн байна (Түвшин ${level})! Гоё зурагтай үг сурах уу, тоо тоолох уу, эсвэл үсэг зурах уу? Аль нь сонирхолтой байна?`,
+        language: 'mn',
+        subtitle: 'Hello little learner! Would you like to practice pictures, numbers, or tracing letters?',
+        mongolianHint: 'Түвшин 2+: Зурагт үг, тоо, үсэг зурах',
+        encouragement: 'Хамтдаа өнөөдөр маш их шинэ зүйл сурна аа!',
+        suggestedReplies: ['Өнгөнүүд англиар яаж хэлэх вэ?', 'Хөөрхөн амьтдын нэр сурмаар байна', '1-ээс 10 хүртэл тоолъё'],
+      };
+    }
+  } else {
+    if (isMom) {
+      return {
+        speechText: `Hello! I am delighted to learn with you at Level ${level}. We can practice practical everyday conversations, polish English grammar, or solve engaging word and math puzzles together. What topic would you like to start with?`,
+        language: 'en',
+        subtitle: `Сайн байна уу! Таны Түвшин ${level}-д тохируулан ярианы англи хэл, дүрэм, эсвэл бодлого хамтран дадлагажихад таатай байна.`,
+        mongolianHint: 'Practical conversational English and problem solving',
+        encouragement: 'Consistency is the true secret to fluency!',
+        suggestedReplies: ['How do I introduce myself professionally?', 'Let us practice conversation for shopping', 'Explain past tense simply'],
+      };
+    } else {
+      return {
+        speechText: `Hi there, little star! Mimi is super happy to see you at Level ${level}! We can count colorful balloons, name sweet animals, or sing letter sounds! What is your favorite thing today?`,
+        language: 'en',
+        subtitle: `Сайн уу бяцхан одон минь! Мими чамтайгаа Түвшин ${level}-д хамт суралцахдаа маш их баяртай байна!`,
+        mongolianHint: 'Friendly English learning with colors, animals and letters',
+        encouragement: 'You are doing great, step by step!',
+        suggestedReplies: ['I love blue and pink!', 'Show me cute animal words', 'Let us count together!'],
+      };
+    }
+  }
 }
 
 export default defineConfig(() => {
@@ -151,13 +328,12 @@ export default defineConfig(() => {
     plugins: [react(), tailwindcss(), teacherApiPlugin()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(__dirname, './src'),
       },
     },
     server: {
-      hmr: process.env.DISABLE_HMR !== 'true',
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      host: '0.0.0.0',
+      port: 3000,
     },
   };
 });
-

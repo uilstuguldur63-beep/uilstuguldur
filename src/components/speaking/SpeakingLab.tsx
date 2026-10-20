@@ -14,6 +14,7 @@ import {
 import { UserProfile } from '../../types';
 import { speechService } from '../../services/speechService';
 import { fireCelebrationConfetti } from '../common/Confetti';
+import { useTranslation } from '../../context/TranslationContext';
 
 interface SpeakingLabProps {
   activeProfile: UserProfile;
@@ -21,6 +22,7 @@ interface SpeakingLabProps {
 }
 
 export const SpeakingLab: React.FC<SpeakingLabProps> = ({ activeProfile, onCompleteExercise }) => {
+  const { t, isTranslated } = useTranslation();
   const [activeTab, setActiveTab] = useState<'repeat' | 'listening' | 'pronunciation'>('repeat');
   const [speechSpeed, setSpeechSpeed] = useState<0.75 | 1.0>(1.0);
   const [accent, setAccent] = useState<'en-US' | 'en-GB'>('en-US');

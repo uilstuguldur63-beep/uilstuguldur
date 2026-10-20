@@ -927,6 +927,7 @@ export const MongolianScriptHub: React.FC<MongolianScriptHubProps> = ({
       {activeTab === 'games' && (
         <div className="space-y-4">
           <MongolianGames
+            activeProfile={activeProfile}
             onReward={(stars, coins) => storageService.addReward(stars, coins)}
             onPlaySound={(t) => handlePlaySound(t)}
             onNavigateToDrawing={(letter) => {
